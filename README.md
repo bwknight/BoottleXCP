@@ -17,10 +17,10 @@ XCP GUI with bottlepy and Bootstrap
 - http://BOOTTLEXCP_HOST:BOOTTLEXCP_PORT/
 
 # Status
-- Send: ready, tested
-- Order: ready, not tested
-- BTCPay: ready, not tested
-- Cancel: ready, not tested
+- Send: ready
+- Order: ready
+- BTCPay: ready
+- Cancel: ready
 - Issuance: not ready
 - Dividend: not ready
 - Callback: not ready
