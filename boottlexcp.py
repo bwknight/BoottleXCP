@@ -82,31 +82,40 @@ def wallet():
 
 @app.post('/action')
 def counterparty_action():
-    unsigned = False
-
+    
+    unsigned = True if request.forms.get('unsigned')!=None and request.forms.get('unsigned')=="1" else False
+    print("unsigned:"+str(unsigned))
     try:
         action = request.forms.get('action')
 
         if action=='send':
             source = request.forms.get('source')
             destination = request.forms.get('destination')
-            quantity = S(request.forms.get('quantity'))
-            asset = request.forms.get('asset')        
+            asset = request.forms.get('asset')  
+            quantity = util.devise(db, request.forms.get('quantity'), asset, 'input')      
             unsigned_tx_hex = send.create(db, source, destination, quantity, asset, unsigned=unsigned)
             result = {'success':True, 'message':str(unsigned_tx_hex)}       
 
         elif action=='order':
             source = request.forms.get('source')
-            give_quantity = S(request.forms.get('give_quantity')) 
             give_asset = request.forms.get('give_asset')
-            get_quantity = S(request.forms.get('get_quantity'))
             get_asset = request.forms.get('get_asset')
+            give_quantity = util.devise(db, request.forms.get('give_quantity'), give_asset, 'input')
+            get_quantity = util.devise(db, request.forms.get('get_quantity'), get_asset, 'input')
             expiration = int(request.forms.get('expiration')) 
-            fee_required = S(request.forms.get('fee_required'))             
+            fee_required = 0
+            fee_provided = config.MIN_FEE
+            if give_asset == 'BTC':
+                fee_required = 0
+                fee_provided = util.devise(db, request.forms.get('fee_provided'), 'BTC', 'input')
+            elif get_asset == 'BTC':
+                fee_required = util.devise(db, request.forms.get('fee_required'), 'BTC', 'input')
+                fee_provided = config.MIN_FEE
+         
             unsigned_tx_hex = order.create(db, source, give_asset,
                                            give_quantity, get_asset,
                                            get_quantity, expiration,
-                                           fee_required, config.MIN_FEE,
+                                           fee_required, fee_provided,
                                            unsigned=unsigned)
 
             result = {'success':True, 'message':str(unsigned_tx_hex)}       
@@ -120,7 +129,67 @@ def counterparty_action():
             offer_hash = request.forms.get('offer_hash')           
             unsigned_tx_hex = cancel.create(db, offer_hash, unsigned=unsigned)
             result = {'success':True, 'message':str(unsigned_tx_hex)}
-           
+
+        elif action=='issuance':
+            source = request.forms.get('source')
+            destination = request.forms.get('destination')
+            asset_name = request.forms.get('asset_name')
+            divisible = True if request.forms.get('divisible')=="1" else False
+            quantity = util.devise(db, request.forms.get('quantity'), None, 'input', divisible=divisible)
+
+            callable_ = True if request.forms.get('callable')=="1" else False
+            call_date = request.forms.get('call_date')
+            call_price = request.forms.get('call_price')
+            description = request.forms.get('description')
+        
+            if callable_:
+                call_date = round(datetime.timestamp(dateutil.parser.parse(call_date)))
+                call_price = float(call_price)
+            else:
+                call_date, call_price = 0, 0
+
+            issuance.create(db, source, destination, asset_name, quantity, divisible, 
+                            callable_, call_date, call_price, description, unsigned=unsigned)
+            result = {'success':True, 'message':str(unsigned_tx_hex)}
+        
+        elif action=='dividend':
+            source = request.forms.get('source')
+            asset = request.forms.get('asset') 
+            quantity_per_share = util.devise(db, request.forms.get('quantity_per_share'), 'XCP', 'input')
+            unsigned_tx_hex = dividend.create(db, source, quantity_per_share, asset, unsigned=unsigned)
+            result = {'success':True, 'message':str(unsigned_tx_hex)}
+
+        elif action=='callback':
+            source = request.forms.get('source')
+            asset = request.forms.get('asset')
+            fraction_per_share = float(request.forms.get('fraction_per_share'))
+            unsigned_tx_hex = callback.create(db, source, fraction_per_share, asset, unsigned=unsigned)
+            result = {'success':True, 'message':str(unsigned_tx_hex)}
+
+        elif action=='broadcast':
+            source = request.forms.get('source')
+            text = request.forms.get('text')
+            value = util.devise(db, request.forms.get('value'), 'value', 'input')
+            fee_multiplier = request.forms.get('fee_multiplier')
+            unsigned_tx_hex = broadcast.create(db, source, int(time.time()), value, fee_multiplier, text, unsigned=unsigned)
+            result = {'success':True, 'message':str(unsigned_tx_hex)}
+
+        elif action=='bet':
+            source = request.forms.get('source')
+            feed_address = request.forms.get('feed_address')
+            bet_type = int(request.forms.get('bet_type'))
+            deadline = calendar.timegm(dateutil.parser.parse(request.forms.get('deadline')).utctimetuple())
+            wager = util.devise(db, request.forms.get('wager'), 'XCP', 'input')
+            counterwager = util.devise(db, request.forms.get('counterwager'), 'XCP', 'input')
+            target_value = util.devise(db, request.forms.get('target_value'), 'value', 'input')
+            leverage = util.devise(db, request.forms.get('leverage'), 'leverage', 'input')
+
+            expiration = request.forms.get('expiration')
+            unsigned_tx_hex = bet.create(db, source, feed_address, bet_type, deadline,
+                                        wager, counterwager, target_value,
+                                        leverage, expiration, unsigned=unsigned)
+            result = {'success':True, 'message':str(unsigned_tx_hex)}
+
         else:
             result = {'success':False, 'message':'Unknown action.'} 
 

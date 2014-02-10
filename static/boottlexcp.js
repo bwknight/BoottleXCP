@@ -2,10 +2,14 @@ var currentAction = 'send';
 
 var counterpartyParams = {
     'send': ['source', 'destination', 'quantity', 'asset'],
-    'order': ['source', 'give_quantity', 'give_asset', 'get_quantity', 'get_asset', 'expiration', 'fee_required'],
+    'order': ['source', 'give_quantity', 'give_asset', 'get_quantity', 'get_asset', 'expiration', 'fee_required', 'fee_provided'],
     'btcpay': ['order_match_id'],
     'cancel': ['offer_hash'],
-    'issuance': ['source', 'destination', 'asset_name', 'quantity', 'divisible', 'callable', 'call_date', 'call_price']
+    'issuance': ['source', 'destination', 'asset_name', 'quantity', 'divisible', 'callable', 'call_date', 'call_price', 'description'],
+    'dividend': ['source', 'asset', 'quantity_per_share'],
+    'callback': ['source', 'asset', 'fraction_per_share'],
+    'broadcast': ['source', 'text', 'value', 'fee_multiplier'],
+    'bet': ['source', 'feed_address', 'bet_type', 'deadline', 'wager', 'counterwager', 'target_value', 'leverage', 'expiration']
 }
 
 function counterpartyAction(action) {
@@ -15,6 +19,7 @@ function counterpartyAction(action) {
         var input = $('div.form-group.'+name+'.'+action+'-tab .form-control');
         params[name] = input.val();
     }
+    params["unsigned"] = $('input[name=unsigned]')[0].checked ? "1" : "0";
     console.log(params);
     $('#walletLoading').modal('show');
     jQuery.ajax({
