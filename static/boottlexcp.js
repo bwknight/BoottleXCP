@@ -98,7 +98,7 @@ function initWallet(data) {
 function displayForm(action) {
     currentAction = action;
     $('#commands div.form-group').hide();
-    console.log('#commands div.form-group.'+action+'-tab');
+    
     $('#commands div.form-group.'+action+'-tab').show();
     //$('#commands div.tab-pane').hide();
     $('#commands #send-tab').show();

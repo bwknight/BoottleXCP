@@ -1,7 +1,7 @@
 BoottleXCP
 ==========
 
-XCP Wallet with bottlepy and Bootstrap
+XCP GUI with bottlepy and Bootstrap
 
 # Changelog
 * **v0.00000001**
